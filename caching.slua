@@ -1,0 +1,33 @@
+database = nil -- export for db
+accountData = {}
+
+addEventHandler("onPlayerLogin", root, 
+	function ()
+		database:query(cacheAccountData, {source}, "SELECT * FROM `accounts` WHERE `id`=? LIMIT 1", getPlayerID(source))
+	end
+)
+
+function cacheAccountData(qh, source)
+	local result = qh:poll(-1)
+	
+	for _, row in pairs(result) do
+		accountData[source] = {}
+		for column, value in pairs(row) do
+			accountData[source][column] = value
+		end
+	end
+	
+	triggerLatentClientEvent(source, "sendTableToClient", source, accountData[source])
+	accountData = {}
+end
+
+function sendTableToServer(sync)
+	local accountData = sync
+	for _, row in pairs(accountData) do
+		for column, value in pairs(row) do
+			database:exec("UPDATE `accounts` SET `??`=? WHERE `id`=?", column, value, getPlayerID(client))
+		end
+	end
+end
+addEvent("sendTableToServer", true)
+addEventHandler("sendTableToServer", root, sendTableToServer)
